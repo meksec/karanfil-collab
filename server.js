@@ -35,10 +35,6 @@ sql.connect(config)
     console.log("Bağlantı Başarısız", err)
 })
 
-server.get('/', (req,res) => {
-   
-})
-
 server.post('/register', (req,res) => {
     const username = req.body.username;
     const password = req.body.password;
