@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard - Karanfil Collab</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header class="navbar">
+
+        <a href="/" class="logo">
+            KARANFİL COLLAB
+        </a>
+
+        <div class="nav-buttons">
+
+            <span id="usernameDisplay" class="user-name">
+                Yükleniyor...
+            </span>
+
+        </div>
+
+    </header>
+
+
+    <main class="dashboard-container">
+
+        <div class="dashboard-header">
+
+            <div>
+
+                <p class="badge">
+                    DASHBOARD
+                </p>
+
+                <h1>
+                    Hoş geldin,
+                    <span id="welcomeUsername">...</span>
+                </h1>
+
+                <p class="dashboard-description">
+                    Endpointlerini ve yakalanan HTTP isteklerini buradan yönetebilirsin.
+                </p>
+
+            </div>
+
+
+            <button
+                id="createEndpointButton"
+                class="btn btn-primary"
+            >
+                + Endpoint Oluştur
+            </button>
+
+        </div>
+
+
+        <section class="stats">
+
+            <div class="stat-card">
+
+                <p>
+                    Endpointler
+                </p>
+
+                <strong id="endpointCount">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <p>
+                    Requestler
+                </p>
+
+                <strong id="requestCount">
+                    0
+                </strong>
+
+            </div>
+
+        </section>
+
+
+        <section class="dashboard-section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <h2>
+                        Endpointlerim
+                    </h2>
+
+                    <p>
+                        Oluşturduğun endpointler.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div id="endpointList" class="endpoint-list">
+
+                <div class="empty-state">
+                    Endpointler yükleniyor...
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <section class="dashboard-section">
+
+            <div class="section-header">
+
+                <div>
+
+                    <h2>
+                        Requestler
+                    </h2>
+
+                    <p>
+                        Yakalanan HTTP istekleri.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div id="requestList" class="request-list">
+
+                <div class="empty-state">
+                    Requestler yükleniyor...
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <div id="modal" class="modal hidden">
+
+            <div class="modal-content">
+
+                <button
+                    id="closeModal"
+                    class="modal-close"
+                >
+                    ×
+                </button>
+
+                <h2>
+                    Endpoint Oluşturuldu
+                </h2>
+
+                <p>
+                    Endpoint adresin:
+                </p>
+
+                <div class="endpoint-url">
+
+                    <span id="endpointUrl"></span>
+
+                </div>
+
+                <button
+                    id="copyEndpoint"
+                    class="btn btn-primary btn-full"
+                >
+                    Endpointi Kopyala
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div id="requestModal" class="modal hidden">
+
+            <div class="modal-content request-detail">
+
+                <button
+                    id="closeRequestModal"
+                    class="modal-close"
+                >
+                    ×
+                </button>
+
+                <h2>
+                    Request Detayı
+                </h2>
+
+
+                <div class="detail-row">
+
+                    <strong>Method</strong>
+
+                    <span id="detailMethod"></span>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <strong>Path</strong>
+
+                    <span id="detailPath"></span>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <strong>IP</strong>
+
+                    <span id="detailIp"></span>
+
+                </div>
+
+
+                <div class="detail-row">
+
+                    <strong>Tarih</strong>
+
+                    <span id="detailDate"></span>
+
+                </div>
+
+
+                <h3>
+                    Headers
+                </h3>
+
+                <pre id="detailHeaders"></pre>
+
+
+                <h3>
+                    Body
+                </h3>
+
+                <pre id="detailBody"></pre>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        const endpointCount = document.getElementById("endpointCount");
+        const requestCount = document.getElementById("requestCount");
+
+        const usernameDisplay = document.getElementById("usernameDisplay");
+        const welcomeUsername = document.getElementById("welcomeUsername");
+
+        const endpointList = document.getElementById("endpointList");
+        const requestList = document.getElementById("requestList");
+
+        const createEndpointButton =
+            document.getElementById("createEndpointButton");
+
+        const modal =
+            document.getElementById("modal");
+
+        const closeModal =
+            document.getElementById("closeModal");
+
+        const endpointUrl =
+            document.getElementById("endpointUrl");
+
+        const copyEndpoint =
+            document.getElementById("copyEndpoint");
+
+
+        const requestModal =
+            document.getElementById("requestModal");
+
+        const closeRequestModal =
+            document.getElementById("closeRequestModal");
+
+
+        async function loadDashboard() {
+
+            try {
+
+                const response = await fetch("/dashboard");
+
+                if (response.status === 403) {
+
+                    window.location.href = "/login.html";
+                    return;
+
+                }
+
+                const data = await response.json();
+
+                usernameDisplay.textContent =
+                    data.user.username;
+
+                welcomeUsername.textContent =
+                    data.user.username;
+
+                endpointCount.textContent =
+                    data.endpointCount;
+
+                requestCount.textContent =
+                    data.requestCount;
+
+            } catch (error) {
+
+                console.log(error);
+
+            }
+
+        }
+
+
+        async function loadEndpoints() {
+
+            try {
+
+                const response = await fetch("/endpoints");
+
+                if (response.status === 403) {
+
+                    window.location.href = "/login.html";
+                    return;
+
+                }
+
+                const endpoints = await response.json();
+
+                endpointList.innerHTML = "";
+
+                if (endpoints.length === 0) {
+
+                    endpointList.innerHTML = `
+                        <div class="empty-state">
+                            Henüz endpoint oluşturmadın.
+                        </div>
+                    `;
+
+                    return;
+
+                }
+
+
+                endpoints.forEach(endpoint => {
+
+                    const endpointElement =
+                        document.createElement("div");
+
+                    endpointElement.className =
+                        "endpoint-card";
+
+
+                    const url =
+                        window.location.origin +
+                        "/i/" +
+                        endpoint.token;
+
+
+                    endpointElement.innerHTML = `
+
+                        <div class="endpoint-info">
+
+                            <strong>
+                                ${endpoint.token}
+                            </strong>
+
+                            <span>
+                                ${url}
+                            </span>
+
+                        </div>
+
+                        <button
+                            class="btn btn-outline"
+                            onclick="loadEndpointRequests(${endpoint.id})"
+                        >
+                            Requestleri Gör
+                        </button>
+
+                    `;
+
+
+                    endpointList.appendChild(endpointElement);
+
+                });
+
+            } catch (error) {
+
+                console.log(error);
+
+            }
+
+        }
+
+
+        async function loadRequests() {
+
+            try {
+
+                const response =
+                    await fetch("/requests");
+
+                if (response.status === 403) {
+
+                    window.location.href = "/login.html";
+                    return;
+
+                }
+
+                const requests =
+                    await response.json();
+
+                requestList.innerHTML = "";
+
+                if (requests.length === 0) {
+
+                    requestList.innerHTML = `
+                        <div class="empty-state">
+                            Henüz request yakalanmadı.
+                        </div>
+                    `;
+
+                    return;
+
+                }
+
+
+                requests.forEach(request => {
+
+                    const requestElement =
+                        document.createElement("div");
+
+                    requestElement.className =
+                        "request-card";
+
+
+                    requestElement.innerHTML = `
+
+                        <div>
+
+                            <strong>
+                                ${request.method}
+                            </strong>
+
+                            <span>
+                                ${request.path}
+                            </span>
+
+                        </div>
+
+                        <button
+                            class="btn btn-outline"
+                            onclick="showRequest(${request.id})"
+                        >
+                            Detay
+                        </button>
+
+                    `;
+
+
+                    requestList.appendChild(requestElement);
+
+                });
+
+            } catch (error) {
+
+                console.log(error);
+
+            }
+
+        }
+
+
+        async function loadEndpointRequests(endpointId) {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `/endpoints/${endpointId}/requests`
+                    );
+
+                const requests =
+                    await response.json();
+
+                requestList.innerHTML = "";
+
+                if (requests.length === 0) {
+
+                    requestList.innerHTML = `
+                        <div class="empty-state">
+                            Bu endpoint için request bulunamadı.
+                        </div>
+                    `;
+
+                    return;
+
+                }
+
+
+                requests.forEach(request => {
+
+                    const requestElement =
+                        document.createElement("div");
+
+                    requestElement.className =
+                        "request-card";
+
+
+                    requestElement.innerHTML = `
+
+                        <div>
+
+                            <strong>
+                                ${request.method}
+                            </strong>
+
+                            <span>
+                                ${request.path}
+                            </span>
+
+                        </div>
+
+                        <button
+                            class="btn btn-outline"
+                            onclick="showRequest(${request.id})"
+                        >
+                            Detay
+                        </button>
+
+                    `;
+
+
+                    requestList.appendChild(requestElement);
+
+                });
+
+            } catch (error) {
+
+                console.log(error);
+
+            }
+
+        }
+
+
+        async function showRequest(requestId) {
+
+            try {
+
+                const response =
+                    await fetch(`/requests/${requestId}`);
+
+                if (response.status === 403) {
+
+                    window.location.href = "/login.html";
+                    return;
+
+                }
+
+                const request =
+                    await response.json();
+
+
+                document.getElementById("detailMethod")
+                    .textContent = request.method;
+
+                document.getElementById("detailPath")
+                    .textContent = request.path;
+
+                document.getElementById("detailIp")
+                    .textContent = request.ip;
+
+                document.getElementById("detailDate")
+                    .textContent =
+                    new Date(request.created_at)
+                    .toLocaleString("tr-TR");
+
+
+                document.getElementById("detailHeaders")
+                    .textContent =
+                    request.headers || "Header yok";
+
+
+                document.getElementById("detailBody")
+                    .textContent =
+                    request.body || "Body yok";
+
+
+                requestModal.classList.remove("hidden");
+
+            } catch (error) {
+
+                console.log(error);
+
+            }
+
+        }
+
+
+        createEndpointButton.addEventListener(
+            "click",
+            async () => {
+
+                try {
+
+                    const response =
+                        await fetch("/endpoint", {
+
+                            method: "POST"
+
+                        });
+
+
+                    if (response.status === 403) {
+
+                        window.location.href =
+                            "/login.html";
+
+                        return;
+
+                    }
+
+
+                    const data =
+                        await response.json();
+
+
+                    const url =
+                        window.location.origin +
+                        "/i/" +
+                        data.token;
+
+
+                    endpointUrl.textContent =
+                        url;
+
+
+                    modal.classList.remove("hidden");
+
+
+                    await loadDashboard();
+                    await loadEndpoints();
+
+                } catch (error) {
+
+                    console.log(error);
+
+                }
+
+            }
+        );
+
+
+        closeModal.addEventListener(
+            "click",
+            () => {
+
+                modal.classList.add("hidden");
+
+            }
+        );
+
+
+        closeRequestModal.addEventListener(
+            "click",
+            () => {
+
+                requestModal.classList.add("hidden");
+
+            }
+        );
+
+
+        copyEndpoint.addEventListener(
+            "click",
+            async () => {
+
+                await navigator.clipboard.writeText(
+                    endpointUrl.textContent
+                );
+
+                copyEndpoint.textContent =
+                    "Kopyalandı!";
+
+                setTimeout(() => {
+
+                    copyEndpoint.textContent =
+                        "Endpointi Kopyala";
+
+                }, 1500);
+
+            }
+        );
+
+
+        loadDashboard();
+        loadEndpoints();
+        loadRequests();
+
+    </script>
+
+</body>
+</html>
