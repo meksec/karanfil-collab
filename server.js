@@ -36,7 +36,7 @@ sql.connect(config)
 })
 
 server.get('/', (req,res) => {
-    res.send("çalıştı")
+   
 })
 
 server.post('/register', (req,res) => {
